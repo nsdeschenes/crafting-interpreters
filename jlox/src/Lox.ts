@@ -5,9 +5,14 @@ import { Token } from "./Token";
 import { TokenType } from "./TokenType";
 import { Parser } from "./Parser";
 import { AstPrinter } from "./AstPrinter";
+import type { RuntimeError } from "./RuntimeError";
+import { Interpreter } from "./Interpreter";
 
 export class Lox {
   public static hadError: boolean = false;
+  public static hadRuntimeError: boolean = false;
+  private static interpreter: Interpreter = new Interpreter();
+
   constructor() {}
 
   public static main(): void {
@@ -30,6 +35,10 @@ export class Lox {
     // Indicate an error in the exit code.
     if (this.hadError) {
       process.exit(65);
+    }
+
+    if (this.hadRuntimeError) {
+      process.exit(70);
     }
   }
 
@@ -64,7 +73,8 @@ export class Lox {
 
     if (this.hadError || expression === null) return;
 
-    console.log(new AstPrinter().print(expression));
+    // console.log(new AstPrinter().print(expression));
+    this.interpreter.interpret(expression);
   }
 
   static error(input: number, message: string): void;
@@ -80,6 +90,11 @@ export class Lox {
         Lox.report(input.line, ` at '${input.lexeme}'`, message);
       }
     }
+  }
+
+  public static runtimeError(error: RuntimeError) {
+    console.error(`${error.message}\n[line ${error.token.line}]`);
+    this.hadRuntimeError = true;
   }
 
   private static report(line: number, where: string, message: string) {
