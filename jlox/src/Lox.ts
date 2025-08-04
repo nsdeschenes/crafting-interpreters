@@ -1,7 +1,10 @@
 import nodeFs from "node:fs";
 import nodeReadline from "node:readline";
 import { Scanner } from "./Scanner";
-import type { Token } from "./Token";
+import { Token } from "./Token";
+import { TokenType } from "./TokenType";
+import { Parser } from "./Parser";
+import { AstPrinter } from "./AstPrinter";
 
 export class Lox {
   public static hadError: boolean = false;
@@ -56,15 +59,27 @@ export class Lox {
   private static run(source: string): void {
     const scanner: Scanner = new Scanner(source);
     const tokens: Token[] = scanner.scanTokens();
+    const parser: Parser = new Parser(tokens);
+    const expression = parser.parse();
 
-    // For now just print the tokens
-    for (const token of tokens) {
-      console.log(token.toString());
-    }
+    if (this.hadError || expression === null) return;
+
+    console.log(new AstPrinter().print(expression));
   }
 
-  public static error(line: number, message: string): void {
-    Lox.report(line, "", message);
+  static error(input: number, message: string): void;
+  static error(input: Token, message: string): void;
+
+  public static error(input: number | Token, message: string): void {
+    if (typeof input === "number") {
+      return Lox.report(input, "", message);
+    } else if (input instanceof Token) {
+      if (input.type === TokenType.EOF) {
+        Lox.report(input.line, " at end", message);
+      } else {
+        Lox.report(input.line, ` at '${input.lexeme}'`, message);
+      }
+    }
   }
 
   private static report(line: number, where: string, message: string) {

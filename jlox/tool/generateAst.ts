@@ -19,7 +19,10 @@ function defineType(
 
   for (const field of fields) {
     const left = field.split(" ")[0];
-    const right = field.split(" ")[1];
+    let right = field.split(" ")[1];
+
+    if (right === "Object") right = "Object | null";
+
     content.push(`  ${left}: ${right};`);
   }
 
@@ -27,7 +30,12 @@ function defineType(
 
   const constructorArgs = fieldList
     .split(", ")
-    .map((value) => value.split(" ").join(": "))
+    .map((value) =>
+      value
+        .split(" ")
+        .map((value) => (value === "Object" ? "Object | null" : value))
+        .join(": ")
+    )
     .join(", ");
 
   content.push(`  constructor(${constructorArgs}) {`);

@@ -2,7 +2,7 @@ import { type Visitor, Expr, Binary, Grouping, Literal, Unary } from "./Expr";
 import { Token } from "./Token";
 import { TokenType } from "./TokenType";
 
-class AstPrinter implements Visitor<string> {
+export class AstPrinter implements Visitor<string> {
   print(expr: Expr): string {
     return expr.accept(this);
   }
@@ -37,9 +37,9 @@ class AstPrinter implements Visitor<string> {
   }
 }
 
-const expression = new Binary(
-  new Unary(new Token(TokenType.MINUS, "-", null, 1), new Literal(123)),
-  new Token(TokenType.STAR, "*", null, 1),
-  new Grouping(new Literal(45.67))
-);
-console.log(new AstPrinter().print(expression));
+// const expression = new Binary(
+//   new Unary(new Token(TokenType.MINUS, "-", null, 1), new Literal(123)),
+//   new Token(TokenType.STAR, "*", null, 1),
+//   new Grouping(new Literal(45.67))
+// );
+// console.log(new AstPrinter().print(expression));
