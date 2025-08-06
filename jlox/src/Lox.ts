@@ -67,14 +67,14 @@ export class Lox {
 
   private static run(source: string): void {
     const scanner: Scanner = new Scanner(source);
-    const tokens: Token[] = scanner.scanTokens();
+    const tokens: Array<Token> = scanner.scanTokens();
     const parser: Parser = new Parser(tokens);
-    const expression = parser.parse();
+    const statements = parser.parse();
 
-    if (this.hadError || expression === null) return;
+    if (this.hadError || statements === null) return;
 
     // console.log(new AstPrinter().print(expression));
-    this.interpreter.interpret(expression);
+    this.interpreter.interpret(statements);
   }
 
   static error(input: number, message: string): void;

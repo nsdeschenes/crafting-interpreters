@@ -1,70 +1,101 @@
-import { Token } from "./Token"
+import { Token } from "./Token";
+import type { TypeOrNull } from './types';
 
 export abstract class Expr {
   abstract accept<R>(visitor: Visitor<R>): R;
 }
 
 export interface Visitor<R> {
-  visitBinaryExpr(expr: Binary): R;
-  visitGroupingExpr(expr: Grouping): R;
-  visitLiteralExpr(expr: Literal): R;
-  visitUnaryExpr(expr: Unary): R;
+  visitAssignExpr(expr: ExprAssign): R;
+  visitBinaryExpr(expr: ExprBinary): R;
+  visitGroupingExpr(expr: ExprGrouping): R;
+  visitLiteralExpr(expr: ExprLiteral): R;
+  visitUnaryExpr(expr: ExprUnary): R;
+  visitVariableExpr(expr: ExprVariable): R;
 }
 
-export class Binary extends Expr {
+export class ExprAssign extends Expr {
+  name: Token;
+  value: Expr;
+
+  constructor(name: Token, value: Expr) {
+    super();
+    this.name = name;
+    this.value = value;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitAssignExpr(this)
+  }
+}
+
+export class ExprBinary extends Expr {
   left: Expr;
   operator: Token;
   right: Expr;
 
   constructor(left: Expr, operator: Token, right: Expr) {
-    super()
+    super();
     this.left = left;
     this.operator = operator;
     this.right = right;
   }
 
-  override accept<R>(visitor: Visitor<R>) {
+  public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitBinaryExpr(this)
   }
 }
 
-export class Grouping extends Expr {
+export class ExprGrouping extends Expr {
   expression: Expr;
 
   constructor(expression: Expr) {
-    super()
+    super();
     this.expression = expression;
   }
 
-  override accept<R>(visitor: Visitor<R>) {
+  public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitGroupingExpr(this)
   }
 }
 
-export class Literal extends Expr {
-  value: Object | null;
+export class ExprLiteral extends Expr {
+  value: TypeOrNull<Object>;
 
-  constructor(value: Object | null) {
-    super()
+  constructor(value: TypeOrNull<Object>) {
+    super();
     this.value = value;
   }
 
-  override accept<R>(visitor: Visitor<R>) {
+  public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitLiteralExpr(this)
   }
 }
 
-export class Unary extends Expr {
+export class ExprUnary extends Expr {
   operator: Token;
   right: Expr;
 
   constructor(operator: Token, right: Expr) {
-    super()
+    super();
     this.operator = operator;
     this.right = right;
   }
 
-  override accept<R>(visitor: Visitor<R>) {
+  public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitUnaryExpr(this)
+  }
+}
+
+export class ExprVariable extends Expr {
+  name: Token;
+
+  constructor(name: Token) {
+    super();
+    this.name = name;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitVariableExpr(this)
   }
 }

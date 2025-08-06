@@ -1,4 +1,13 @@
-import { type Visitor, Expr, Binary, Grouping, Literal, Unary } from "./Expr";
+import {
+  type Visitor,
+  Expr,
+  ExprAssign,
+  ExprBinary,
+  ExprGrouping,
+  ExprLiteral,
+  ExprUnary,
+  ExprVariable,
+} from "./Expr";
 import { Token } from "./Token";
 import { TokenType } from "./TokenType";
 
@@ -7,25 +16,33 @@ export class AstPrinter implements Visitor<string> {
     return expr.accept(this);
   }
 
-  visitBinaryExpr(expr: Binary) {
+  visitBinaryExpr(expr: ExprBinary) {
     return this.parenthesize(expr.operator.lexeme, expr.left, expr.right);
   }
 
-  visitGroupingExpr(expr: Grouping) {
+  visitGroupingExpr(expr: ExprGrouping) {
     return this.parenthesize("group", expr.expression);
   }
 
-  visitLiteralExpr(expr: Literal) {
+  visitLiteralExpr(expr: ExprLiteral) {
     if (expr.value === null) return "nil";
     return expr.value.toString();
   }
 
-  visitUnaryExpr(expr: Unary) {
+  visitUnaryExpr(expr: ExprUnary) {
     return this.parenthesize(expr.operator.lexeme, expr.right);
   }
 
-  parenthesize(name: string, ...exprs: Expr[]) {
-    const builder: string[] = [];
+  visitAssignExpr(expr: ExprAssign): string {
+    return this.parenthesize("assign", expr);
+  }
+
+  visitVariableExpr(expr: ExprVariable): string {
+    return this.parenthesize("variable", expr);
+  }
+
+  parenthesize(name: string, ...exprs: Array<Expr>) {
+    const builder: Array<string> = [];
 
     builder.push(`(${name}`);
     for (const expr of exprs) {
@@ -37,9 +54,9 @@ export class AstPrinter implements Visitor<string> {
   }
 }
 
-// const expression = new Binary(
-//   new Unary(new Token(TokenType.MINUS, "-", null, 1), new Literal(123)),
-//   new Token(TokenType.STAR, "*", null, 1),
-//   new Grouping(new Literal(45.67))
-// );
-// console.log(new AstPrinter().print(expression));
+const expression = new ExprBinary(
+  new ExprUnary(new Token(TokenType.MINUS, "-", null, 1), new ExprLiteral(123)),
+  new Token(TokenType.STAR, "*", null, 1),
+  new ExprGrouping(new ExprLiteral(45.67))
+);
+console.log(new AstPrinter().print(expression));

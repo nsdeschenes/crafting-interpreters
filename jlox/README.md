@@ -1,4 +1,4 @@
-# jlox
+# jlox Interpreter
 
 To install dependencies:
 
@@ -9,7 +9,17 @@ bun install
 To run:
 
 ```bash
-bun run index.ts
+bun start -- examples/<filename>.lox
 ```
 
-This project was created using `bun init` in bun v1.2.2. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+To generate AST files:
+
+```bash
+bun generate-ast
+```
+
+To print static AST:
+
+```bash
+bun print-ast
+```

@@ -1,10 +1,11 @@
 import { Token } from "./Token";
 import { type TTokenType, TokenType } from "./TokenType";
 import { Lox } from "./Lox";
+import type { TypeOrNull } from "./types";
 
 export class Scanner {
   private source: string;
-  private tokens: Token[] = [];
+  private tokens: Array<Token> = [];
   private start: number = 0;
   private current: number = 0;
   private line: number = 0;
@@ -35,7 +36,7 @@ export class Scanner {
     this.keywords.set("while", TokenType.WHILE);
   }
 
-  public scanTokens(): Token[] {
+  public scanTokens(): Array<Token> {
     while (!this.isAtEnd()) {
       // We are at the beginning of the next lexeme.
       this.start = this.current;
@@ -50,57 +51,49 @@ export class Scanner {
     const c = this.advance();
     switch (c) {
       case "(":
-        this.addToken(TokenType.LEFT_PAREN, undefined);
+        this.addToken(TokenType.LEFT_PAREN);
         break;
       case ")":
-        this.addToken(TokenType.RIGHT_PAREN, undefined);
+        this.addToken(TokenType.RIGHT_PAREN);
         break;
       case "{":
-        this.addToken(TokenType.LEFT_BRACE, undefined);
+        this.addToken(TokenType.LEFT_BRACE);
         break;
       case "}":
-        this.addToken(TokenType.RIGHT_BRACE, undefined);
+        this.addToken(TokenType.RIGHT_BRACE);
         break;
       case ",":
-        this.addToken(TokenType.COMMA, undefined);
+        this.addToken(TokenType.COMMA);
         break;
       case ".":
-        this.addToken(TokenType.DOT, undefined);
+        this.addToken(TokenType.DOT);
         break;
       case "-":
-        this.addToken(TokenType.MINUS, undefined);
+        this.addToken(TokenType.MINUS);
         break;
       case "+":
-        this.addToken(TokenType.PLUS, undefined);
+        this.addToken(TokenType.PLUS);
         break;
       case ";":
-        this.addToken(TokenType.SEMICOLON, undefined);
+        this.addToken(TokenType.SEMICOLON);
         break;
       case "*":
-        this.addToken(TokenType.STAR, undefined);
+        this.addToken(TokenType.STAR);
         break;
       case "!":
-        this.addToken(
-          this.match("=") ? TokenType.BANG_EQUAL : TokenType.BANG,
-          undefined
-        );
+        this.addToken(this.match("=") ? TokenType.BANG_EQUAL : TokenType.BANG);
         break;
       case "=":
         this.addToken(
-          this.match("=") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL,
-          undefined
+          this.match("=") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL
         );
         break;
       case "<":
-        this.addToken(
-          this.match("=") ? TokenType.LESS_EQUAL : TokenType.LESS,
-          undefined
-        );
+        this.addToken(this.match("=") ? TokenType.LESS_EQUAL : TokenType.LESS);
         break;
       case ">":
         this.addToken(
-          this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER,
-          undefined
+          this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER
         );
         break;
       case "/":
@@ -108,7 +101,7 @@ export class Scanner {
           // A comment goes until the end of the line.
           while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
         } else {
-          this.addToken(TokenType.SLASH, undefined);
+          this.addToken(TokenType.SLASH);
         }
         break;
       case " ":
@@ -144,7 +137,7 @@ export class Scanner {
     if (!type) {
       type = TokenType.IDENTIFIER;
     }
-    this.addToken(type, undefined);
+    this.addToken(type);
   }
 
   private number(): void {
@@ -236,10 +229,7 @@ export class Scanner {
     return this.source.charAt(this.current++);
   }
 
-  private addToken(type: TTokenType, b: undefined): void;
-  private addToken(type: TTokenType, literal: {} | null): void;
-
-  private addToken(type: TTokenType, literal: {} | null | undefined) {
+  private addToken(type: TTokenType, literal?: TypeOrNull<Object>) {
     if (typeof literal === "undefined") {
       this.addToken(type, null);
     } else {
