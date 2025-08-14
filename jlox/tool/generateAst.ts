@@ -111,6 +111,7 @@ defineAst(outputDir, "Expr", [
   "Binary   : left Expr, operator Token, right Expr",
   "Grouping : expression Expr",
   "Literal  : value Object",
+  "Logical  : left Expr, operator Token, right Expr",
   "Unary    : operator Token, right Expr",
   "Variable : name Token",
 ]);
@@ -118,6 +119,8 @@ defineAst(outputDir, "Expr", [
 defineAst(outputDir, "Stmt", [
   "Block      : statements Array<Stmt>",
   "Expression : expression Expr",
+  "If         : condition Expr, thenBranch Stmt, elseBranch TypeOrNull<Stmt>",
   "Print      : expression Expr",
   "Var        : name Token, initializer TypeOrNull<Expr>",
+  "While      : condition Expr, body Stmt",
 ]);

@@ -9,8 +9,10 @@ export abstract class Stmt {
 export interface Visitor<R> {
   visitBlockStmt(stmt: StmtBlock): R;
   visitExpressionStmt(stmt: StmtExpression): R;
+  visitIfStmt(stmt: StmtIf): R;
   visitPrintStmt(stmt: StmtPrint): R;
   visitVarStmt(stmt: StmtVar): R;
+  visitWhileStmt(stmt: StmtWhile): R;
 }
 
 export class StmtBlock extends Stmt {
@@ -39,6 +41,23 @@ export class StmtExpression extends Stmt {
   }
 }
 
+export class StmtIf extends Stmt {
+  condition: Expr;
+  thenBranch: Stmt;
+  elseBranch: TypeOrNull<Stmt>;
+
+  constructor(condition: Expr, thenBranch: Stmt, elseBranch: TypeOrNull<Stmt>) {
+    super();
+    this.condition = condition;
+    this.thenBranch = thenBranch;
+    this.elseBranch = elseBranch;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitIfStmt(this)
+  }
+}
+
 export class StmtPrint extends Stmt {
   expression: Expr;
 
@@ -64,5 +83,20 @@ export class StmtVar extends Stmt {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitVarStmt(this)
+  }
+}
+
+export class StmtWhile extends Stmt {
+  condition: Expr;
+  body: Stmt;
+
+  constructor(condition: Expr, body: Stmt) {
+    super();
+    this.condition = condition;
+    this.body = body;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitWhileStmt(this)
   }
 }

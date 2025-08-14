@@ -5,6 +5,7 @@ import {
   ExprBinary,
   ExprGrouping,
   ExprLiteral,
+  ExprLogical,
   ExprUnary,
   ExprVariable,
   type Visitor,
@@ -17,6 +18,8 @@ import type {
   Stmt,
   StmtVar,
   StmtBlock,
+  StmtIf,
+  StmtWhile,
 } from "./Stmt";
 import type { Token } from "./Token";
 import { TokenType } from "./TokenType";
@@ -39,6 +42,18 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
 
   public visitLiteralExpr(expr: ExprLiteral): TypeOrNull<Object> {
     return expr.value;
+  }
+
+  public visitLogicalExpr(expr: ExprLogical): TypeOrNull<Object> {
+    const left = this.evaluate(expr.left);
+
+    if (expr.operator.type === TokenType.OR) {
+      if (this.isTruthy(left)) return left;
+    } else {
+      if (!this.isTruthy(left)) return left;
+    }
+
+    return this.evaluate(expr.right);
   }
 
   public visitGroupingExpr(expr: ExprGrouping): TypeOrNull<Object> {
@@ -185,6 +200,15 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     return;
   }
 
+  public visitIfStmt(stmt: StmtIf): void {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch);
+    } else if (stmt.elseBranch !== null) {
+      this.execute(stmt.elseBranch);
+    }
+    return;
+  }
+
   public visitPrintStmt(stmt: StmtPrint): void {
     const value = this.evaluate(stmt.expression);
     console.log(this.stringify(value));
@@ -198,6 +222,13 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     }
 
     this.environment.define(stmt.name.lexeme, value);
+    return;
+  }
+
+  public visitWhileStmt(stmt: StmtWhile): void {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body);
+    }
     return;
   }
 
