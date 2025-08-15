@@ -48,7 +48,11 @@ function defineType(
   content.push("");
 
   content.push(`  public override accept<R>(visitor: Visitor<R>) {`);
-  content.push(`    return visitor.visit${className}${baseName}(this)`);
+  content.push(
+    `    return Sentry.startSpan({ name: "${baseName}${className}.accept" }, () => {`
+  );
+  content.push(`      return visitor.visit${className}${baseName}(this)`);
+  content.push(`    });`);
   content.push(`  }`);
 
   content.push(`}`);
@@ -77,14 +81,18 @@ function defineAst(outputDir: string, baseName: string, types: Array<string>) {
   const content: Array<string> = [];
 
   if (baseName === "Expr") {
+    content.push(`import * as Sentry from "@sentry/bun"`);
+    content.push(``);
     content.push(`import { Token } from "./Token";`);
-    content.push(`import type { TypeOrNull } from './types';`);
+    content.push(`import type { TypeOrNull } from "./types";`);
   }
 
   if (baseName === "Stmt") {
-    content.push(`import { Expr } from './Expr';`);
+    content.push(`import * as Sentry from "@sentry/bun"`);
+    content.push(``);
+    content.push(`import { Expr } from "./Expr";`);
     content.push(`import { Token } from "./Token";`);
-    content.push(`import type { TypeOrNull } from './types';`);
+    content.push(`import type { TypeOrNull } from "./types";`);
   }
 
   content.push("");

@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/bun";
+
 import { Environment } from "./Environment";
 import type { Interpreter } from "./Interpreter";
 import type { LoxCallable } from "./LoxCallable";
@@ -15,29 +17,33 @@ export class LoxFunction implements LoxCallable {
   }
 
   public arity(): number {
-    return this.declaration.params.length;
+    return Sentry.startSpan({ name: "LoxFunction.arity." }, () => {
+      return this.declaration.params.length;
+    });
   }
 
   public call(
     interpreter: Interpreter,
     args: TypeOrNull<Object>[]
   ): TypeOrNull<Object> {
-    const environment = new Environment(this.closure);
+    return Sentry.startSpan({ name: "LoxFunction.call." }, () => {
+      const environment = new Environment(this.closure);
 
-    for (let i = 0; i < this.declaration.params.length; i++) {
-      environment.define(this.declaration.params[i].lexeme, args[i]);
-    }
-
-    try {
-      interpreter.executeBlock(this.declaration.body, environment);
-    } catch (returnValue) {
-      // console.log('returnValue', returnValue)
-      if (returnValue instanceof Return) {
-        return returnValue.value;
+      for (let i = 0; i < this.declaration.params.length; i++) {
+        environment.define(this.declaration.params[i].lexeme, args[i]);
       }
-    }
 
-    return null;
+      try {
+        interpreter.executeBlock(this.declaration.body, environment);
+      } catch (returnValue) {
+        // console.log('returnValue', returnValue)
+        if (returnValue instanceof Return) {
+          return returnValue.value;
+        }
+      }
+
+      return null;
+    });
   }
 
   public toString(): string {

@@ -12,5 +12,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@sentry/bun": "^10.5.0"
   }
 }

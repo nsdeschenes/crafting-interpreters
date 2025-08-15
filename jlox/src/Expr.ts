@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/bun"
+
 import { Token } from "./Token";
-import type { TypeOrNull } from './types';
+import type { TypeOrNull } from "./types";
 
 export abstract class Expr {
   abstract accept<R>(visitor: Visitor<R>): R;
@@ -27,7 +29,9 @@ export class ExprAssign extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitAssignExpr(this)
+    return Sentry.startSpan({ name: "ExprAssign.accept" }, () => {
+      return visitor.visitAssignExpr(this)
+    });
   }
 }
 
@@ -44,7 +48,9 @@ export class ExprBinary extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitBinaryExpr(this)
+    return Sentry.startSpan({ name: "ExprBinary.accept" }, () => {
+      return visitor.visitBinaryExpr(this)
+    });
   }
 }
 
@@ -61,7 +67,9 @@ export class ExprCall extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitCallExpr(this)
+    return Sentry.startSpan({ name: "ExprCall.accept" }, () => {
+      return visitor.visitCallExpr(this)
+    });
   }
 }
 
@@ -74,7 +82,9 @@ export class ExprGrouping extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitGroupingExpr(this)
+    return Sentry.startSpan({ name: "ExprGrouping.accept" }, () => {
+      return visitor.visitGroupingExpr(this)
+    });
   }
 }
 
@@ -87,7 +97,9 @@ export class ExprLiteral extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitLiteralExpr(this)
+    return Sentry.startSpan({ name: "ExprLiteral.accept" }, () => {
+      return visitor.visitLiteralExpr(this)
+    });
   }
 }
 
@@ -104,7 +116,9 @@ export class ExprLogical extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitLogicalExpr(this)
+    return Sentry.startSpan({ name: "ExprLogical.accept" }, () => {
+      return visitor.visitLogicalExpr(this)
+    });
   }
 }
 
@@ -119,7 +133,9 @@ export class ExprUnary extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitUnaryExpr(this)
+    return Sentry.startSpan({ name: "ExprUnary.accept" }, () => {
+      return visitor.visitUnaryExpr(this)
+    });
   }
 }
 
@@ -132,6 +148,8 @@ export class ExprVariable extends Expr {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitVariableExpr(this)
+    return Sentry.startSpan({ name: "ExprVariable.accept" }, () => {
+      return visitor.visitVariableExpr(this)
+    });
   }
 }

@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/bun";
+
 import { Environment } from "./Environment";
 import {
   Expr,
@@ -50,61 +52,75 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
   }
 
   public interpret(statements: Array<Stmt>): void {
-    try {
-      for (const statement of statements) {
-        this.execute(statement);
+    return Sentry.startSpan({ name: "Interpreter.interpret" }, () => {
+      try {
+        for (const statement of statements) {
+          this.execute(statement);
+        }
+      } catch (error) {
+        if (error instanceof RuntimeError) {
+          Lox.runtimeError(error);
+        }
       }
-    } catch (error) {
-      if (error instanceof RuntimeError) {
-        Lox.runtimeError(error);
-      }
-    }
+    });
   }
 
   public visitLiteralExpr(expr: ExprLiteral): TypeOrNull<Object> {
-    return expr.value;
+    return Sentry.startSpan({ name: "Interpreter.visitLiteralExpr" }, () => {
+      return expr.value;
+    });
   }
 
   public visitLogicalExpr(expr: ExprLogical): TypeOrNull<Object> {
-    const left = this.evaluate(expr.left);
+    return Sentry.startSpan({ name: "Interpreter.visitLogicalExpr" }, () => {
+      const left = this.evaluate(expr.left);
 
-    if (expr.operator.type === TokenType.OR) {
-      if (this.isTruthy(left)) return left;
-    } else {
-      if (!this.isTruthy(left)) return left;
-    }
+      if (expr.operator.type === TokenType.OR) {
+        if (this.isTruthy(left)) return left;
+      } else {
+        if (!this.isTruthy(left)) return left;
+      }
 
-    return this.evaluate(expr.right);
+      return this.evaluate(expr.right);
+    });
   }
 
   public visitGroupingExpr(expr: ExprGrouping): TypeOrNull<Object> {
-    return this.evaluate(expr.expression);
+    return Sentry.startSpan({ name: "Interpreter.visitGroupingExpr" }, () => {
+      return this.evaluate(expr.expression);
+    });
   }
 
   public visitUnaryExpr(expr: ExprUnary): TypeOrNull<Object> {
-    const right = this.evaluate(expr.right);
+    return Sentry.startSpan({ name: "Interpreter.visitUnaryExpr" }, () => {
+      const right = this.evaluate(expr.right);
 
-    switch (expr.operator.type) {
-      case TokenType.BANG:
-        return !this.isTruthy(right);
-      case TokenType.MINUS:
-        this.checkNumberOperand(expr.operator, right);
-        return -Number(right);
-    }
+      switch (expr.operator.type) {
+        case TokenType.BANG:
+          return !this.isTruthy(right);
+        case TokenType.MINUS:
+          this.checkNumberOperand(expr.operator, right);
+          return -Number(right);
+      }
 
-    return null;
+      return null;
+    });
   }
 
   public visitVariableExpr(expr: ExprVariable): TypeOrNull<Object> {
-    return this.environment.get(expr.name);
+    return Sentry.startSpan({ name: "Interpreter.visitVarableExpr" }, () => {
+      return this.environment.get(expr.name);
+    });
   }
 
   private checkNumberOperand(
     operator: Token,
     operand: TypeOrNull<Object>
   ): void {
-    if (typeof operand === "number") return;
-    throw new RuntimeError(operator, "Operand must be a number.");
+    return Sentry.startSpan({ name: "Interpreter.checkNumberOperand" }, () => {
+      if (typeof operand === "number") return;
+      throw new RuntimeError(operator, "Operand must be a number.");
+    });
   }
 
   private checkNumberOperands(
@@ -112,186 +128,225 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     left: TypeOrNull<Object>,
     right: TypeOrNull<Object>
   ): void {
-    if (typeof left === "number" && typeof right === "number") return;
-    throw new RuntimeError(operator, "Operands must be numbers.");
+    return Sentry.startSpan({ name: "Interpreter.checkNumberOperands" }, () => {
+      if (typeof left === "number" && typeof right === "number") return;
+      throw new RuntimeError(operator, "Operands must be numbers.");
+    });
   }
 
   private isTruthy(object: TypeOrNull<Object>): boolean {
-    if (object === null) return false;
-    if (typeof object === "boolean") return Boolean(object);
-    return true;
+    return Sentry.startSpan({ name: "Interpreter.isTruthy" }, () => {
+      if (object === null) return false;
+      if (typeof object === "boolean") return Boolean(object);
+      return true;
+    });
   }
 
   private isEqual(a: TypeOrNull<Object>, b: TypeOrNull<Object>): boolean {
-    if (a === null && b === null) return true;
-    if (a === null) return false;
+    return Sentry.startSpan({ name: "Interpreter.isEqual" }, () => {
+      if (a === null && b === null) return true;
+      if (a === null) return false;
 
-    return a === b;
+      return a === b;
+    });
   }
 
   private stringify(object: TypeOrNull<Object>): string {
-    if (object == null) return "nil";
+    return Sentry.startSpan({ name: "Interpreter.stringify" }, () => {
+      if (object == null) return "nil";
 
-    if (typeof object === "number") {
-      let text = object.toString();
-      if (text.endsWith(".0")) {
-        text = text.substring(0, text.length - 2);
+      if (typeof object === "number") {
+        let text = object.toString();
+        if (text.endsWith(".0")) {
+          text = text.substring(0, text.length - 2);
+        }
+        return text;
       }
-      return text;
-    }
 
-    return object.toString();
+      return object.toString();
+    });
   }
 
   public visitBinaryExpr(expr: ExprBinary): TypeOrNull<Object> {
-    const left = this.evaluate(expr.left);
-    const right = this.evaluate(expr.right);
+    return Sentry.startSpan({ name: "Interpreter.visitBinaryExpr" }, () => {
+      const left = this.evaluate(expr.left);
+      const right = this.evaluate(expr.right);
 
-    switch (expr.operator.type) {
-      case TokenType.BANG_EQUAL:
-        return !this.isEqual(left, right);
-      case TokenType.EQUAL_EQUAL:
-        return this.isEqual(left, right);
-      case TokenType.GREATER:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) > Number(right);
-      case TokenType.GREATER_EQUAL:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) >= Number(right);
-      case TokenType.LESS:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) < Number(right);
-      case TokenType.LESS_EQUAL:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) <= Number(right);
-      case TokenType.MINUS:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) - Number(right);
-      case TokenType.PLUS:
-        if (typeof left === "number" && typeof right === "number") {
-          return Number(left) + Number(right);
-        }
+      switch (expr.operator.type) {
+        case TokenType.BANG_EQUAL:
+          return !this.isEqual(left, right);
+        case TokenType.EQUAL_EQUAL:
+          return this.isEqual(left, right);
+        case TokenType.GREATER:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) > Number(right);
+        case TokenType.GREATER_EQUAL:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) >= Number(right);
+        case TokenType.LESS:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) < Number(right);
+        case TokenType.LESS_EQUAL:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) <= Number(right);
+        case TokenType.MINUS:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) - Number(right);
+        case TokenType.PLUS:
+          if (typeof left === "number" && typeof right === "number") {
+            return Number(left) + Number(right);
+          }
 
-        if (typeof left === "string" && typeof right === "string") {
-          return String(left) + String(right);
-        }
+          if (typeof left === "string" && typeof right === "string") {
+            return String(left) + String(right);
+          }
 
-        throw new RuntimeError(
-          expr.operator,
-          "Operands must be two numbers or two strings."
-        );
-      case TokenType.SLASH:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) / Number(right);
-      case TokenType.STAR:
-        this.checkNumberOperands(expr.operator, left, right);
-        return Number(left) * Number(right);
-    }
+          throw new RuntimeError(
+            expr.operator,
+            "Operands must be two numbers or two strings."
+          );
+        case TokenType.SLASH:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) / Number(right);
+        case TokenType.STAR:
+          this.checkNumberOperands(expr.operator, left, right);
+          return Number(left) * Number(right);
+      }
 
-    return null;
+      return null;
+    });
   }
 
   public visitCallExpr(expr: ExprCall): TypeOrNull<Object> {
-    const callee = this.evaluate(expr.callee);
-    const args: Array<TypeOrNull<Object>> = [];
-    for (const arg of expr.args) {
-      args.push(this.evaluate(arg));
-    }
+    return Sentry.startSpan({ name: "Interpreter.visitCallExpr" }, () => {
+      const callee = this.evaluate(expr.callee);
+      const args: Array<TypeOrNull<Object>> = [];
+      for (const arg of expr.args) {
+        args.push(this.evaluate(arg));
+      }
 
-    if (!isLoxCallable(callee)) {
-      throw new RuntimeError(expr.paren, "Can only call function and classes.");
-    }
+      if (!isLoxCallable(callee)) {
+        throw new RuntimeError(
+          expr.paren,
+          "Can only call function and classes."
+        );
+      }
 
-    const func = callee;
-    if (args.length !== func.arity()) {
-      throw new RuntimeError(
-        expr.paren,
-        `Expected ${func.arity()} arguments but got ${args.length}.`
-      );
-    }
+      const func = callee;
+      if (args.length !== func.arity()) {
+        throw new RuntimeError(
+          expr.paren,
+          `Expected ${func.arity()} arguments but got ${args.length}.`
+        );
+      }
 
-    return func.call(this, args);
+      return func.call(this, args);
+    });
   }
 
   private evaluate(expr: Expr): TypeOrNull<Object> {
-    return expr.accept(this);
+    return Sentry.startSpan({ name: "Interpreter.evaluate" }, () => {
+      return expr.accept(this);
+    });
   }
 
   private execute(stmt: Stmt): void {
-    stmt.accept(this);
+    return Sentry.startSpan({ name: "Interpreter.execute" }, () => {
+      stmt.accept(this);
+    });
   }
 
   public executeBlock(statements: Array<Stmt>, environment: Environment) {
-    const previous = this.environment;
-    try {
-      this.environment = environment;
-      for (const statement of statements) {
-        this.execute(statement);
+    return Sentry.startSpan({ name: "Interpreter.executeBlock" }, () => {
+      const previous = this.environment;
+      try {
+        this.environment = environment;
+        for (const statement of statements) {
+          this.execute(statement);
+        }
+      } finally {
+        this.environment = environment;
       }
-    } finally {
-      this.environment = environment;
-    }
+    });
   }
 
   public visitBlockStmt(stmt: StmtBlock): void {
-    this.executeBlock(stmt.statements, new Environment(this.environment));
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitBlockStmt" }, () => {
+      this.executeBlock(stmt.statements, new Environment(this.environment));
+      return;
+    });
   }
 
   public visitExpressionStmt(stmt: StmtExpression): void {
-    this.evaluate(stmt.expression);
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitExpressionStmt" }, () => {
+      this.evaluate(stmt.expression);
+      return;
+    });
   }
 
   public visitFunctionStmt(stmt: StmtFunction): void {
-    const func = new LoxFunction(stmt, this.environment);
-    this.environment.define(stmt.name.lexeme, func);
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitFunctionStmt" }, () => {
+      const func = new LoxFunction(stmt, this.environment);
+      this.environment.define(stmt.name.lexeme, func);
+      return;
+    });
   }
 
   public visitIfStmt(stmt: StmtIf): void {
-    if (this.isTruthy(this.evaluate(stmt.condition))) {
-      this.execute(stmt.thenBranch);
-    } else if (stmt.elseBranch !== null) {
-      this.execute(stmt.elseBranch);
-    }
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitIfStmt" }, () => {
+      if (this.isTruthy(this.evaluate(stmt.condition))) {
+        this.execute(stmt.thenBranch);
+      } else if (stmt.elseBranch !== null) {
+        this.execute(stmt.elseBranch);
+      }
+      return;
+    });
   }
 
   public visitPrintStmt(stmt: StmtPrint): void {
-    const value = this.evaluate(stmt.expression);
-    console.log(this.stringify(value));
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitPrintStmt" }, () => {
+      const value = this.evaluate(stmt.expression);
+      console.log(this.stringify(value));
+      return;
+    });
   }
 
   public visitReturnStmt(stmt: StmtReturn) {
-    let value: TypeOrNull<Object> = null;
-    if (stmt.value !== null) value = this.evaluate(stmt.value);
+    return Sentry.startSpan({ name: "Interpreter.visitReturnStmt" }, () => {
+      let value: TypeOrNull<Object> = null;
+      if (stmt.value !== null) value = this.evaluate(stmt.value);
 
-    throw new Return(value);
+      throw new Return(value);
+    });
   }
 
   public visitVarStmt(stmt: StmtVar): void {
-    let value: TypeOrNull<Object> = null;
-    if (stmt.initializer !== null) {
-      value = this.evaluate(stmt.initializer);
-    }
+    return Sentry.startSpan({ name: "Interpreter.visitVarStmt" }, () => {
+      let value: TypeOrNull<Object> = null;
+      if (stmt.initializer !== null) {
+        value = this.evaluate(stmt.initializer);
+      }
 
-    this.environment.define(stmt.name.lexeme, value);
-    return;
+      this.environment.define(stmt.name.lexeme, value);
+      return;
+    });
   }
 
   public visitWhileStmt(stmt: StmtWhile): void {
-    while (this.isTruthy(this.evaluate(stmt.condition))) {
-      this.execute(stmt.body);
-    }
-    return;
+    return Sentry.startSpan({ name: "Interpreter.visitWhileStmt" }, () => {
+      while (this.isTruthy(this.evaluate(stmt.condition))) {
+        this.execute(stmt.body);
+      }
+      return;
+    });
   }
 
   public visitAssignExpr(expr: ExprAssign): TypeOrNull<Object> {
-    const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+    return Sentry.startSpan({ name: "Interpreter.visitAssignExpr" }, () => {
+      const value = this.evaluate(expr.value);
+      this.environment.assign(expr.name, value);
 
-    return value;
+      return value;
+    });
   }
 }

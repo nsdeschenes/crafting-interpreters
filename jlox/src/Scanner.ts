@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/bun";
+
 import { Token } from "./Token";
 import { type TTokenType, TokenType } from "./TokenType";
 import { Lox } from "./Lox";
@@ -37,205 +39,237 @@ export class Scanner {
   }
 
   public scanTokens(): Array<Token> {
-    while (!this.isAtEnd()) {
-      // We are at the beginning of the next lexeme.
-      this.start = this.current;
-      this.scanToken();
-    }
+    return Sentry.startSpan({ name: "Scanner.scanTokens" }, () => {
+      while (!this.isAtEnd()) {
+        // We are at the beginning of the next lexeme.
+        this.start = this.current;
+        this.scanToken();
+      }
 
-    this.tokens.push(new Token(TokenType.EOF, "", null, this.line));
-    return this.tokens;
+      this.tokens.push(new Token(TokenType.EOF, "", null, this.line));
+      return this.tokens;
+    });
   }
 
   private scanToken(): void {
-    const c = this.advance();
-    switch (c) {
-      case "(":
-        this.addToken(TokenType.LEFT_PAREN);
-        break;
-      case ")":
-        this.addToken(TokenType.RIGHT_PAREN);
-        break;
-      case "{":
-        this.addToken(TokenType.LEFT_BRACE);
-        break;
-      case "}":
-        this.addToken(TokenType.RIGHT_BRACE);
-        break;
-      case ",":
-        this.addToken(TokenType.COMMA);
-        break;
-      case ".":
-        this.addToken(TokenType.DOT);
-        break;
-      case "-":
-        this.addToken(TokenType.MINUS);
-        break;
-      case "+":
-        this.addToken(TokenType.PLUS);
-        break;
-      case ";":
-        this.addToken(TokenType.SEMICOLON);
-        break;
-      case "*":
-        this.addToken(TokenType.STAR);
-        break;
-      case "!":
-        this.addToken(this.match("=") ? TokenType.BANG_EQUAL : TokenType.BANG);
-        break;
-      case "=":
-        this.addToken(
-          this.match("=") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL
-        );
-        break;
-      case "<":
-        this.addToken(this.match("=") ? TokenType.LESS_EQUAL : TokenType.LESS);
-        break;
-      case ">":
-        this.addToken(
-          this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER
-        );
-        break;
-      case "/":
-        if (this.match("/")) {
-          // A comment goes until the end of the line.
-          while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
-        } else {
-          this.addToken(TokenType.SLASH);
-        }
-        break;
-      case " ":
-      case "\r":
-      case "\t":
-        // Ignore whitespace.
-        break;
-      case "\n":
-        this.line++;
-        break;
-      case '"':
-        this.string();
-        break;
-      default:
-        if (this.isDigit(c)) {
-          this.number();
-        } else if (this.isAlpha(c)) {
-          this.identifier();
-        } else {
-          Lox.error(this.line, "Unexpected character.");
-        }
-        break;
-    }
+    return Sentry.startSpan({ name: "Scanner.scanToken" }, () => {
+      const c = this.advance();
+      switch (c) {
+        case "(":
+          this.addToken(TokenType.LEFT_PAREN);
+          break;
+        case ")":
+          this.addToken(TokenType.RIGHT_PAREN);
+          break;
+        case "{":
+          this.addToken(TokenType.LEFT_BRACE);
+          break;
+        case "}":
+          this.addToken(TokenType.RIGHT_BRACE);
+          break;
+        case ",":
+          this.addToken(TokenType.COMMA);
+          break;
+        case ".":
+          this.addToken(TokenType.DOT);
+          break;
+        case "-":
+          this.addToken(TokenType.MINUS);
+          break;
+        case "+":
+          this.addToken(TokenType.PLUS);
+          break;
+        case ";":
+          this.addToken(TokenType.SEMICOLON);
+          break;
+        case "*":
+          this.addToken(TokenType.STAR);
+          break;
+        case "!":
+          this.addToken(
+            this.match("=") ? TokenType.BANG_EQUAL : TokenType.BANG
+          );
+          break;
+        case "=":
+          this.addToken(
+            this.match("=") ? TokenType.EQUAL_EQUAL : TokenType.EQUAL
+          );
+          break;
+        case "<":
+          this.addToken(
+            this.match("=") ? TokenType.LESS_EQUAL : TokenType.LESS
+          );
+          break;
+        case ">":
+          this.addToken(
+            this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER
+          );
+          break;
+        case "/":
+          if (this.match("/")) {
+            // A comment goes until the end of the line.
+            while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
+          } else {
+            this.addToken(TokenType.SLASH);
+          }
+          break;
+        case " ":
+        case "\r":
+        case "\t":
+          // Ignore whitespace.
+          break;
+        case "\n":
+          this.line++;
+          break;
+        case '"':
+          this.string();
+          break;
+        default:
+          if (this.isDigit(c)) {
+            this.number();
+          } else if (this.isAlpha(c)) {
+            this.identifier();
+          } else {
+            Lox.error(this.line, "Unexpected character.");
+          }
+          break;
+      }
+    });
   }
 
   private identifier(): void {
-    while (this.isAlphaNumeric(this.peek())) {
-      this.advance();
-    }
+    return Sentry.startSpan({ name: "Scanner.identifier" }, () => {
+      while (this.isAlphaNumeric(this.peek())) {
+        this.advance();
+      }
 
-    const text: string = this.source.substring(this.start, this.current);
-    let type: TTokenType | undefined = Scanner.keywords.get(text);
-    if (!type) {
-      type = TokenType.IDENTIFIER;
-    }
-    this.addToken(type);
+      const text: string = this.source.substring(this.start, this.current);
+      let type: TTokenType | undefined = Scanner.keywords.get(text);
+      if (!type) {
+        type = TokenType.IDENTIFIER;
+      }
+      this.addToken(type);
+    });
   }
 
   private number(): void {
-    while (this.isDigit(this.peek())) {
-      this.advance();
-    }
-
-    // Look for a fractional part.
-    if (this.peek() == "." && this.isDigit(this.peekNext())) {
-      // Consume the "."
-      this.advance();
-
+    return Sentry.startSpan({ name: "Scanner.number" }, () => {
       while (this.isDigit(this.peek())) {
         this.advance();
       }
-    }
 
-    this.addToken(
-      TokenType.NUMBER,
-      parseFloat(this.source.substring(this.start, this.current))
-    );
+      // Look for a fractional part.
+      if (this.peek() == "." && this.isDigit(this.peekNext())) {
+        // Consume the "."
+        this.advance();
+
+        while (this.isDigit(this.peek())) {
+          this.advance();
+        }
+      }
+
+      this.addToken(
+        TokenType.NUMBER,
+        parseFloat(this.source.substring(this.start, this.current))
+      );
+    });
   }
 
   private string(): void {
-    while (this.peek() !== '"' && !this.isAtEnd()) {
-      if (this.peek() == "\n") {
-        this.line++;
+    return Sentry.startSpan({ name: "Scanner.string" }, () => {
+      while (this.peek() !== '"' && !this.isAtEnd()) {
+        if (this.peek() == "\n") {
+          this.line++;
+        }
+        this.advance();
       }
+
+      if (this.isAtEnd()) {
+        Lox.error(this.line, "Unterminated string.");
+        return;
+      }
+
+      // The closing "."
       this.advance();
-    }
 
-    if (this.isAtEnd()) {
-      Lox.error(this.line, "Unterminated string.");
-      return;
-    }
-
-    // The closing "."
-    this.advance();
-
-    // Trim the surrounding quotes.
-    const value: string = this.source.substring(
-      this.start + 1,
-      this.current - 1
-    );
-    this.addToken(TokenType.STRING, value);
+      // Trim the surrounding quotes.
+      const value: string = this.source.substring(
+        this.start + 1,
+        this.current - 1
+      );
+      this.addToken(TokenType.STRING, value);
+    });
   }
 
   private match(expected: string): boolean {
-    if (this.isAtEnd()) {
-      return false;
-    } else if (this.source.charAt(this.current) != expected) {
-      return false;
-    }
-    this.current++;
-    return true;
+    return Sentry.startSpan({ name: "Scanner.match" }, () => {
+      if (this.isAtEnd()) {
+        return false;
+      } else if (this.source.charAt(this.current) != expected) {
+        return false;
+      }
+      this.current++;
+      return true;
+    });
   }
 
   private peek(): string {
-    if (this.isAtEnd()) {
-      return "\0";
-    }
-    return this.source.charAt(this.current);
+    return Sentry.startSpan({ name: "Scanner.peek" }, () => {
+      if (this.isAtEnd()) {
+        return "\0";
+      }
+      return this.source.charAt(this.current);
+    });
   }
 
   private peekNext(): string {
-    if (this.current + 1 >= this.source.length) {
-      return "\0";
-    }
-    return this.source.charAt(this.current + 1);
+    return Sentry.startSpan({ name: "Scanner.peekNext" }, () => {
+      if (this.current + 1 >= this.source.length) {
+        return "\0";
+      }
+      return this.source.charAt(this.current + 1);
+    });
   }
 
   private isAlpha(c: string) {
-    return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
+    return Sentry.startSpan({ name: "Scanner.isAlpha" }, () => {
+      return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_";
+    });
   }
 
   private isAlphaNumeric(c: string) {
-    return this.isAlpha(c) || this.isDigit(c);
+    return Sentry.startSpan({ name: "Scanner.isAlphaNumeric" }, () => {
+      return this.isAlpha(c) || this.isDigit(c);
+    });
   }
 
   private isDigit(c: string): boolean {
-    return c >= "0" && c <= "9";
+    return Sentry.startSpan({ name: "Scanner.isDigit" }, () => {
+      return c >= "0" && c <= "9";
+    });
   }
 
   private isAtEnd(): boolean {
-    return this.current >= this.source.length;
+    return Sentry.startSpan({ name: "Scanner.isAtEnd" }, () => {
+      return this.current >= this.source.length;
+    });
   }
 
   private advance(): string {
-    return this.source.charAt(this.current++);
+    return Sentry.startSpan({ name: "Scanner.advance" }, () => {
+      return this.source.charAt(this.current++);
+    });
   }
 
   private addToken(type: TTokenType, literal?: TypeOrNull<Object>) {
-    if (typeof literal === "undefined") {
-      this.addToken(type, null);
-    } else {
-      const text: string = this.source.substring(this.start, this.current);
-      this.tokens.push(new Token(type, text, literal, this.line));
-    }
-    return;
+    return Sentry.startSpan({ name: "Scanner.addToken" }, () => {
+      if (typeof literal === "undefined") {
+        this.addToken(type, null);
+      } else {
+        const text: string = this.source.substring(this.start, this.current);
+        this.tokens.push(new Token(type, text, literal, this.line));
+      }
+      return;
+    });
   }
 }

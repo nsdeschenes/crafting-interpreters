@@ -1,6 +1,8 @@
-import { Expr } from './Expr';
+import * as Sentry from "@sentry/bun"
+
+import { Expr } from "./Expr";
 import { Token } from "./Token";
-import type { TypeOrNull } from './types';
+import type { TypeOrNull } from "./types";
 
 export abstract class Stmt {
   abstract accept<R>(visitor: Visitor<R>): R;
@@ -26,7 +28,9 @@ export class StmtBlock extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitBlockStmt(this)
+    return Sentry.startSpan({ name: "StmtBlock.accept" }, () => {
+      return visitor.visitBlockStmt(this)
+    });
   }
 }
 
@@ -39,7 +43,9 @@ export class StmtExpression extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitExpressionStmt(this)
+    return Sentry.startSpan({ name: "StmtExpression.accept" }, () => {
+      return visitor.visitExpressionStmt(this)
+    });
   }
 }
 
@@ -56,7 +62,9 @@ export class StmtFunction extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitFunctionStmt(this)
+    return Sentry.startSpan({ name: "StmtFunction.accept" }, () => {
+      return visitor.visitFunctionStmt(this)
+    });
   }
 }
 
@@ -73,7 +81,9 @@ export class StmtIf extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitIfStmt(this)
+    return Sentry.startSpan({ name: "StmtIf.accept" }, () => {
+      return visitor.visitIfStmt(this)
+    });
   }
 }
 
@@ -86,7 +96,9 @@ export class StmtPrint extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitPrintStmt(this)
+    return Sentry.startSpan({ name: "StmtPrint.accept" }, () => {
+      return visitor.visitPrintStmt(this)
+    });
   }
 }
 
@@ -101,7 +113,9 @@ export class StmtReturn extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitReturnStmt(this)
+    return Sentry.startSpan({ name: "StmtReturn.accept" }, () => {
+      return visitor.visitReturnStmt(this)
+    });
   }
 }
 
@@ -116,7 +130,9 @@ export class StmtVar extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitVarStmt(this)
+    return Sentry.startSpan({ name: "StmtVar.accept" }, () => {
+      return visitor.visitVarStmt(this)
+    });
   }
 }
 
@@ -131,6 +147,8 @@ export class StmtWhile extends Stmt {
   }
 
   public override accept<R>(visitor: Visitor<R>) {
-    return visitor.visitWhileStmt(this)
+    return Sentry.startSpan({ name: "StmtWhile.accept" }, () => {
+      return visitor.visitWhileStmt(this)
+    });
   }
 }
