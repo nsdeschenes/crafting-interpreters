@@ -8,6 +8,7 @@ export abstract class Expr {
 export interface Visitor<R> {
   visitAssignExpr(expr: ExprAssign): R;
   visitBinaryExpr(expr: ExprBinary): R;
+  visitCallExpr(expr: ExprCall): R;
   visitGroupingExpr(expr: ExprGrouping): R;
   visitLiteralExpr(expr: ExprLiteral): R;
   visitLogicalExpr(expr: ExprLogical): R;
@@ -44,6 +45,23 @@ export class ExprBinary extends Expr {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitBinaryExpr(this)
+  }
+}
+
+export class ExprCall extends Expr {
+  callee: Expr;
+  paren: Token;
+  args: Array<Expr>;
+
+  constructor(callee: Expr, paren: Token, args: Array<Expr>) {
+    super();
+    this.callee = callee;
+    this.paren = paren;
+    this.args = args;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitCallExpr(this)
   }
 }
 

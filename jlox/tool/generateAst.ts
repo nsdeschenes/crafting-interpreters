@@ -109,6 +109,7 @@ const outputDir = args[0];
 defineAst(outputDir, "Expr", [
   "Assign   : name Token, value Expr",
   "Binary   : left Expr, operator Token, right Expr",
+  "Call     : callee Expr, paren Token, args Array<Expr>",
   "Grouping : expression Expr",
   "Literal  : value Object",
   "Logical  : left Expr, operator Token, right Expr",
@@ -119,8 +120,10 @@ defineAst(outputDir, "Expr", [
 defineAst(outputDir, "Stmt", [
   "Block      : statements Array<Stmt>",
   "Expression : expression Expr",
+  "Function   : name Token, params Array<Token>, body Array<Stmt>",
   "If         : condition Expr, thenBranch Stmt, elseBranch TypeOrNull<Stmt>",
   "Print      : expression Expr",
+  "Return     : keyword Token, value TypeOrNull<Expr>",
   "Var        : name Token, initializer TypeOrNull<Expr>",
   "While      : condition Expr, body Stmt",
 ]);

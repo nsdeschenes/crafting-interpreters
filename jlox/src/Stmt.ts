@@ -9,8 +9,10 @@ export abstract class Stmt {
 export interface Visitor<R> {
   visitBlockStmt(stmt: StmtBlock): R;
   visitExpressionStmt(stmt: StmtExpression): R;
+  visitFunctionStmt(stmt: StmtFunction): R;
   visitIfStmt(stmt: StmtIf): R;
   visitPrintStmt(stmt: StmtPrint): R;
+  visitReturnStmt(stmt: StmtReturn): R;
   visitVarStmt(stmt: StmtVar): R;
   visitWhileStmt(stmt: StmtWhile): R;
 }
@@ -41,6 +43,23 @@ export class StmtExpression extends Stmt {
   }
 }
 
+export class StmtFunction extends Stmt {
+  name: Token;
+  params: Array<Token>;
+  body: Array<Stmt>;
+
+  constructor(name: Token, params: Array<Token>, body: Array<Stmt>) {
+    super();
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitFunctionStmt(this)
+  }
+}
+
 export class StmtIf extends Stmt {
   condition: Expr;
   thenBranch: Stmt;
@@ -68,6 +87,21 @@ export class StmtPrint extends Stmt {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitPrintStmt(this)
+  }
+}
+
+export class StmtReturn extends Stmt {
+  keyword: Token;
+  value: TypeOrNull<Expr>;
+
+  constructor(keyword: Token, value: TypeOrNull<Expr>) {
+    super();
+    this.keyword = keyword;
+    this.value = value;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitReturnStmt(this)
   }
 }
 

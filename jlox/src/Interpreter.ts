@@ -3,6 +3,7 @@ import {
   Expr,
   ExprAssign,
   ExprBinary,
+  ExprCall,
   ExprGrouping,
   ExprLiteral,
   ExprLogical,
@@ -11,6 +12,9 @@ import {
   type Visitor,
 } from "./Expr";
 import { Lox } from "./Lox";
+import { isLoxCallable, type LoxCallable } from "./LoxCallable";
+import { LoxFunction } from "./LoxFunction";
+import { Return } from "./Return";
 import { RuntimeError } from "./RuntimeError";
 import type {
   StmtExpression,
@@ -20,13 +24,30 @@ import type {
   StmtBlock,
   StmtIf,
   StmtWhile,
+  StmtFunction,
+  StmtReturn,
 } from "./Stmt";
 import type { Token } from "./Token";
 import { TokenType } from "./TokenType";
 import type { TypeOrNull } from "./types";
 
 export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
-  private environment: Environment = new Environment();
+  public globals: Environment = new Environment();
+  private environment: Environment = this.globals;
+
+  constructor() {
+    this.globals.define("clock", {
+      arity(): number {
+        return 0;
+      },
+      call(interpreter: Interpreter, args: Array<TypeOrNull<Object>>) {
+        return Date.now() / 1000;
+      },
+      toString(): string {
+        return "<native fn>";
+      },
+    } satisfies LoxCallable);
+  }
 
   public interpret(statements: Array<Stmt>): void {
     try {
@@ -170,6 +191,28 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     return null;
   }
 
+  public visitCallExpr(expr: ExprCall): TypeOrNull<Object> {
+    const callee = this.evaluate(expr.callee);
+    const args: Array<TypeOrNull<Object>> = [];
+    for (const arg of expr.args) {
+      args.push(this.evaluate(arg));
+    }
+
+    if (!isLoxCallable(callee)) {
+      throw new RuntimeError(expr.paren, "Can only call function and classes.");
+    }
+
+    const func = callee;
+    if (args.length !== func.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${func.arity()} arguments but got ${args.length}.`
+      );
+    }
+
+    return func.call(this, args);
+  }
+
   private evaluate(expr: Expr): TypeOrNull<Object> {
     return expr.accept(this);
   }
@@ -200,6 +243,12 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     return;
   }
 
+  public visitFunctionStmt(stmt: StmtFunction): void {
+    const func = new LoxFunction(stmt, this.environment);
+    this.environment.define(stmt.name.lexeme, func);
+    return;
+  }
+
   public visitIfStmt(stmt: StmtIf): void {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch);
@@ -213,6 +262,13 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     const value = this.evaluate(stmt.expression);
     console.log(this.stringify(value));
     return;
+  }
+
+  public visitReturnStmt(stmt: StmtReturn) {
+    let value: TypeOrNull<Object> = null;
+    if (stmt.value !== null) value = this.evaluate(stmt.value);
+
+    throw new Return(value);
   }
 
   public visitVarStmt(stmt: StmtVar): void {
