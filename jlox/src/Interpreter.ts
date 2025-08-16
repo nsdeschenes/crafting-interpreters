@@ -34,6 +34,7 @@ import type { TypeOrNull } from "./types";
 export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
   public globals: Environment = new Environment();
   private environment: Environment = this.globals;
+  private locals: Map<Expr, number> = new Map();
 
   constructor() {
     this.globals.define("clock", {
@@ -96,7 +97,16 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
   }
 
   public visitVariableExpr(expr: ExprVariable): TypeOrNull<Object> {
-    return this.environment.get(expr.name);
+    return this.lookUpVariable(expr.name, expr);
+  }
+
+  private lookUpVariable(name: Token, expr: Expr): TypeOrNull<Object> {
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name.lexeme);
+    } else {
+      return this.globals.get(name);
+    }
   }
 
   private checkNumberOperand(
@@ -221,6 +231,10 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     stmt.accept(this);
   }
 
+  public resolve(expr: Expr, depth: number): void {
+    this.locals.set(expr, depth);
+  }
+
   public executeBlock(statements: Array<Stmt>, environment: Environment) {
     const previous = this.environment;
     try {
@@ -229,7 +243,7 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
         this.execute(statement);
       }
     } finally {
-      this.environment = environment;
+      this.environment = previous;
     }
   }
 
@@ -290,7 +304,13 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
 
   public visitAssignExpr(expr: ExprAssign): TypeOrNull<Object> {
     const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    const distance = this.locals.get(expr);
+    if (distance && distance !== null) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
 
     return value;
   }

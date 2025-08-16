@@ -7,6 +7,7 @@ import { Parser } from "./Parser";
 import { AstPrinter } from "./AstPrinter";
 import type { RuntimeError } from "./RuntimeError";
 import { Interpreter } from "./Interpreter";
+import { Resolver } from "./Resolver";
 
 export class Lox {
   public static hadError: boolean = false;
@@ -70,6 +71,11 @@ export class Lox {
     const tokens: Array<Token> = scanner.scanTokens();
     const parser: Parser = new Parser(tokens);
     const statements = parser.parse();
+
+    if (this.hadError || statements === null) return;
+
+    const resolver = new Resolver(this.interpreter);
+    resolver.resolve(statements);
 
     if (this.hadError || statements === null) return;
 

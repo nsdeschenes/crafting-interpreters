@@ -31,7 +31,6 @@ export class LoxFunction implements LoxCallable {
     try {
       interpreter.executeBlock(this.declaration.body, environment);
     } catch (returnValue) {
-      // console.log('returnValue', returnValue)
       if (returnValue instanceof Return) {
         return returnValue.value;
       }
