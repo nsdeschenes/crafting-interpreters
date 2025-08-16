@@ -42,7 +42,7 @@ export class AstPrinter implements Visitor<string> {
   }
 
   parenthesize(name: string, ...exprs: Array<Expr>) {
-    const builder: Array<string> = [];
+    const builder: Array<string> = new Array();
 
     builder.push(`(${name}`);
     for (const expr of exprs) {

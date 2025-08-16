@@ -9,9 +9,12 @@ export interface Visitor<R> {
   visitAssignExpr(expr: ExprAssign): R;
   visitBinaryExpr(expr: ExprBinary): R;
   visitCallExpr(expr: ExprCall): R;
+  visitGetExpr(expr: ExprGet): R;
   visitGroupingExpr(expr: ExprGrouping): R;
   visitLiteralExpr(expr: ExprLiteral): R;
   visitLogicalExpr(expr: ExprLogical): R;
+  visitSetExpr(expr: ExprSet): R;
+  visitThisExpr(expr: ExprThis): R;
   visitUnaryExpr(expr: ExprUnary): R;
   visitVariableExpr(expr: ExprVariable): R;
 }
@@ -65,6 +68,21 @@ export class ExprCall extends Expr {
   }
 }
 
+export class ExprGet extends Expr {
+  object: Expr;
+  name: Token;
+
+  constructor(object: Expr, name: Token) {
+    super();
+    this.object = object;
+    this.name = name;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitGetExpr(this)
+  }
+}
+
 export class ExprGrouping extends Expr {
   expression: Expr;
 
@@ -105,6 +123,36 @@ export class ExprLogical extends Expr {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitLogicalExpr(this)
+  }
+}
+
+export class ExprSet extends Expr {
+  object: Expr;
+  name: Token;
+  value: Expr;
+
+  constructor(object: Expr, name: Token, value: Expr) {
+    super();
+    this.object = object;
+    this.name = name;
+    this.value = value;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitSetExpr(this)
+  }
+}
+
+export class ExprThis extends Expr {
+  keyword: Token;
+
+  constructor(keyword: Token) {
+    super();
+    this.keyword = keyword;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitThisExpr(this)
   }
 }
 

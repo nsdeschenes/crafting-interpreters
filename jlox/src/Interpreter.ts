@@ -4,16 +4,21 @@ import {
   ExprAssign,
   ExprBinary,
   ExprCall,
+  ExprGet,
   ExprGrouping,
   ExprLiteral,
   ExprLogical,
+  ExprSet,
+  ExprThis,
   ExprUnary,
   ExprVariable,
   type Visitor,
 } from "./Expr";
 import { Lox } from "./Lox";
 import { isLoxCallable, type LoxCallable } from "./LoxCallable";
+import { LoxClass } from "./LoxClass";
 import { LoxFunction } from "./LoxFunction";
+import { LoxInstance } from "./LoxInstance";
 import { Return } from "./Return";
 import { RuntimeError } from "./RuntimeError";
 import type {
@@ -26,6 +31,7 @@ import type {
   StmtWhile,
   StmtFunction,
   StmtReturn,
+  StmtClass,
 } from "./Stmt";
 import type { Token } from "./Token";
 import { TokenType } from "./TokenType";
@@ -76,6 +82,22 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     }
 
     return this.evaluate(expr.right);
+  }
+
+  public visitSetExpr(expr: ExprSet): TypeOrNull<Object> {
+    const object = this.evaluate(expr.object);
+
+    if (!(object instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, "Only instances have fields.");
+    }
+
+    const value = this.evaluate(expr.value);
+    object.set(expr.name, value);
+    return value;
+  }
+
+  public visitThisExpr(expr: ExprThis): TypeOrNull<Object> {
+    return this.lookUpVariable(expr.keyword, expr);
   }
 
   public visitGroupingExpr(expr: ExprGrouping): TypeOrNull<Object> {
@@ -203,7 +225,7 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
 
   public visitCallExpr(expr: ExprCall): TypeOrNull<Object> {
     const callee = this.evaluate(expr.callee);
-    const args: Array<TypeOrNull<Object>> = [];
+    const args: Array<TypeOrNull<Object>> = new Array();
     for (const arg of expr.args) {
       args.push(this.evaluate(arg));
     }
@@ -221,6 +243,15 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     }
 
     return func.call(this, args);
+  }
+
+  public visitGetExpr(expr: ExprGet): TypeOrNull<Object> {
+    const object = this.evaluate(expr.object);
+    if (object instanceof LoxInstance) {
+      return object.get(expr.name);
+    }
+
+    throw new RuntimeError(expr.name, "Only instances have properties.");
   }
 
   private evaluate(expr: Expr): TypeOrNull<Object> {
@@ -252,13 +283,28 @@ export class Interpreter implements Visitor<TypeOrNull<Object>>, Visitor<void> {
     return;
   }
 
+  public visitClassStmt(stmt: StmtClass): void {
+    this.environment.define(stmt.name.lexeme, null);
+
+    const methods = new Map<string, LoxFunction>();
+    for (const method of stmt.methods) {
+      const func = new LoxFunction(method, this.environment, true);
+      methods.set(method.name.lexeme, func);
+    }
+
+    const klass = new LoxClass(stmt.name.lexeme, methods);
+    this.environment.assign(stmt.name, klass);
+
+    return;
+  }
+
   public visitExpressionStmt(stmt: StmtExpression): void {
     this.evaluate(stmt.expression);
     return;
   }
 
   public visitFunctionStmt(stmt: StmtFunction): void {
-    const func = new LoxFunction(stmt, this.environment);
+    const func = new LoxFunction(stmt, this.environment, false);
     this.environment.define(stmt.name.lexeme, func);
     return;
   }

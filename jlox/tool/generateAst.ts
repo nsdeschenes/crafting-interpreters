@@ -74,7 +74,7 @@ function defineVisitor(
 
 function defineAst(outputDir: string, baseName: string, types: Array<string>) {
   const path = nodePath.resolve(`${outputDir}/${baseName}.ts`);
-  const content: Array<string> = [];
+  const content: Array<string> = new Array();
 
   if (baseName === "Expr") {
     content.push(`import { Token } from "./Token";`);
@@ -110,15 +110,19 @@ defineAst(outputDir, "Expr", [
   "Assign   : name Token, value Expr",
   "Binary   : left Expr, operator Token, right Expr",
   "Call     : callee Expr, paren Token, args Array<Expr>",
+  "Get      : object Expr, name Token",
   "Grouping : expression Expr",
   "Literal  : value Object",
   "Logical  : left Expr, operator Token, right Expr",
+  "Set      : object Expr, name Token, value Expr",
+  "This     : keyword Token",
   "Unary    : operator Token, right Expr",
   "Variable : name Token",
 ]);
 
 defineAst(outputDir, "Stmt", [
   "Block      : statements Array<Stmt>",
+  "Class      : name Token, methods Array<StmtFunction>",
   "Expression : expression Expr",
   "Function   : name Token, params Array<Token>, body Array<Stmt>",
   "If         : condition Expr, thenBranch Stmt, elseBranch TypeOrNull<Stmt>",

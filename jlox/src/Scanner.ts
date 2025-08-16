@@ -5,7 +5,7 @@ import type { TypeOrNull } from "./types";
 
 export class Scanner {
   private source: string;
-  private tokens: Array<Token> = [];
+  private tokens: Array<Token> = new Array();
   private start: number = 0;
   private current: number = 0;
   private line: number = 0;

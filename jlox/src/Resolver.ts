@@ -4,9 +4,12 @@ import {
   ExprAssign,
   ExprBinary,
   ExprCall,
+  ExprGet,
   ExprGrouping,
   ExprLiteral,
   ExprLogical,
+  ExprSet,
+  ExprThis,
   ExprUnary,
   ExprVariable,
   type Visitor as ExprVisitor,
@@ -14,6 +17,7 @@ import {
 import { type Interpreter } from "./Interpreter";
 import {
   Stmt,
+  StmtClass,
   StmtExpression,
   StmtFunction,
   StmtIf,
@@ -43,6 +47,7 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   private interpreter: Interpreter;
   private scopes = new Array<Map<string, boolean>>();
   private currentFunction: TFunctionType = FunctionType.NONE;
+  private currentClass: TClassType = ClassType.NONE;
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter;
@@ -52,6 +57,32 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     this.beginScope();
     this.resolve(stmt.statements);
     this.endScope();
+    return;
+  }
+
+  public visitClassStmt(stmt: StmtClass): void {
+    const enclosingClass = this.currentClass;
+    this.currentClass = ClassType.CLASS;
+
+    this.declare(stmt.name);
+    this.define(stmt.name);
+
+    this.beginScope();
+    this.scopes.at(-1)?.set("this", true);
+
+    for (const method of stmt.methods) {
+      let declaration: TFunctionType = FunctionType.METHOD;
+
+      if (method.name.lexeme === "init") {
+        declaration = FunctionType.INITIALIZER;
+      }
+
+      this.resolveFunction(method, declaration);
+    }
+
+    this.endScope();
+
+    this.currentClass = enclosingClass;
     return;
   }
 
@@ -77,10 +108,15 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
       Lox.error(stmt.keyword, "Can't return from top-level code.");
     }
 
-    if (stmt.value !== null) {
-      this.resolve(stmt.value);
+    if (stmt.value === null) {
+      return;
     }
-    return;
+
+    if (this.currentFunction === FunctionType.INITIALIZER) {
+      Lox.error(stmt.keyword, "Can't return a value from an initializer.");
+    }
+
+    this.resolve(stmt.value);
   }
 
   public visitFunctionStmt(stmt: StmtFunction): void {
@@ -126,6 +162,11 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     return;
   }
 
+  public visitGetExpr(expr: ExprGet): void {
+    this.resolve(expr.object);
+    return;
+  }
+
   public visitGroupingExpr(expr: ExprGrouping): void {
     this.resolve(expr.expression);
     return;
@@ -138,6 +179,22 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   public visitLogicalExpr(expr: ExprLogical): void {
     this.resolve(expr.left);
     this.resolve(expr.right);
+    return;
+  }
+
+  public visitSetExpr(expr: ExprSet): void {
+    this.resolve(expr.value);
+    this.resolve(expr.object);
+    return;
+  }
+
+  public visitThisExpr(expr: ExprThis): void {
+    if (this.currentClass === ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
+      return;
+    }
+
+    this.resolveLocal(expr, expr.keyword);
     return;
   }
 
@@ -226,5 +283,13 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
 const FunctionType = {
   NONE: "NONE",
   FUNCTION: "FUNCTION",
+  INITIALIZER: "INITIALIZER",
+  METHOD: "METHOD",
 } as const;
 type TFunctionType = keyof typeof FunctionType;
+
+const ClassType = {
+  NONE: "NONE",
+  CLASS: "CLASS",
+} as const;
+type TClassType = keyof typeof ClassType;

@@ -2,7 +2,7 @@ import { Interpreter } from "./Interpreter";
 import type { TypeOrNull } from "./types";
 
 export interface LoxCallable {
-  call(interpreter: Interpreter, args: TypeOrNull<Object>[]): any;
+  call(interpreter: Interpreter, args: Array<TypeOrNull<Object>>): any;
 
   arity(): number;
 

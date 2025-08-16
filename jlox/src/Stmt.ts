@@ -8,6 +8,7 @@ export abstract class Stmt {
 
 export interface Visitor<R> {
   visitBlockStmt(stmt: StmtBlock): R;
+  visitClassStmt(stmt: StmtClass): R;
   visitExpressionStmt(stmt: StmtExpression): R;
   visitFunctionStmt(stmt: StmtFunction): R;
   visitIfStmt(stmt: StmtIf): R;
@@ -27,6 +28,21 @@ export class StmtBlock extends Stmt {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class StmtClass extends Stmt {
+  name: Token;
+  methods: Array<StmtFunction>;
+
+  constructor(name: Token, methods: Array<StmtFunction>) {
+    super();
+    this.name = name;
+    this.methods = methods;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitClassStmt(this)
   }
 }
 

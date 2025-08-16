@@ -4,7 +4,7 @@ import type { TypeOrNull } from "./types";
 
 export class Environment {
   enclosing: TypeOrNull<Environment>;
-  public values = new Map<string, TypeOrNull<Object>>();
+  private values = new Map<string, TypeOrNull<Object>>();
 
   constructor(enclosing?: Environment) {
     this.enclosing = enclosing ?? null;
