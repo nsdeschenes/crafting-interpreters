@@ -1,4 +1,4 @@
-import { Expr } from './Expr';
+import { Expr, ExprVariable } from './Expr';
 import { Token } from "./Token";
 import type { TypeOrNull } from './types';
 
@@ -33,11 +33,13 @@ export class StmtBlock extends Stmt {
 
 export class StmtClass extends Stmt {
   name: Token;
+  superclass: TypeOrNull<ExprVariable>;
   methods: Array<StmtFunction>;
 
-  constructor(name: Token, methods: Array<StmtFunction>) {
+  constructor(name: Token, superclass: TypeOrNull<ExprVariable>, methods: Array<StmtFunction>) {
     super();
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 

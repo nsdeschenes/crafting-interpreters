@@ -6,15 +6,28 @@ import type { TypeOrNull } from "./types";
 
 export class LoxClass implements LoxCallable {
   public name: string;
+  superclass: LoxClass;
   private methods: Map<string, LoxFunction>;
 
-  constructor(name: string, methods: Map<string, LoxFunction>) {
+  constructor(
+    name: string,
+    superclass: LoxClass,
+    methods: Map<string, LoxFunction>
+  ) {
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 
   public findMethod(name: string): TypeOrNull<LoxFunction> {
-    return this.methods.get(name) ?? null;
+    const method = this.methods.get(name);
+    if (method) return method;
+
+    if (this.superclass !== null) {
+      return this.superclass.findMethod(name);
+    }
+
+    return null;
   }
 
   public toString(): string {

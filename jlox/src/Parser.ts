@@ -7,6 +7,7 @@ import {
   ExprLiteral,
   ExprLogical,
   ExprSet,
+  ExprSuper,
   ExprThis,
   ExprUnary,
   ExprVariable,
@@ -71,6 +72,13 @@ export class Parser {
 
   private classDeclaration(): Stmt {
     const name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
+
+    let superclass: TypeOrNull<ExprVariable> = null;
+    if (this.match(TokenType.LESS)) {
+      this.consume(TokenType.IDENTIFIER, "Expect superclass name.");
+      superclass = new ExprVariable(this.previous());
+    }
+
     this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
 
     const methods: Array<StmtFunction> = new Array();
@@ -79,7 +87,7 @@ export class Parser {
     }
 
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
-    return new StmtClass(name, methods);
+    return new StmtClass(name, superclass, methods);
   }
 
   private statement(): Stmt {
@@ -382,6 +390,16 @@ export class Parser {
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new ExprLiteral(this.previous().literal);
+    }
+
+    if (this.match(TokenType.SUPER)) {
+      const keyword = this.previous();
+      this.consume(TokenType.DOT, "Expect '.' after 'super'.");
+      const method = this.consume(
+        TokenType.IDENTIFIER,
+        "Expect superclass method name."
+      );
+      return new ExprSuper(keyword, method);
     }
 
     if (this.match(TokenType.THIS)) return new ExprThis(this.previous());

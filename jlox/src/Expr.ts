@@ -14,6 +14,7 @@ export interface Visitor<R> {
   visitLiteralExpr(expr: ExprLiteral): R;
   visitLogicalExpr(expr: ExprLogical): R;
   visitSetExpr(expr: ExprSet): R;
+  visitSuperExpr(expr: ExprSuper): R;
   visitThisExpr(expr: ExprThis): R;
   visitUnaryExpr(expr: ExprUnary): R;
   visitVariableExpr(expr: ExprVariable): R;
@@ -140,6 +141,21 @@ export class ExprSet extends Expr {
 
   public override accept<R>(visitor: Visitor<R>) {
     return visitor.visitSetExpr(this)
+  }
+}
+
+export class ExprSuper extends Expr {
+  keyword: Token;
+  method: Token;
+
+  constructor(keyword: Token, method: Token) {
+    super();
+    this.keyword = keyword;
+    this.method = method;
+  }
+
+  public override accept<R>(visitor: Visitor<R>) {
+    return visitor.visitSuperExpr(this)
   }
 }
 

@@ -9,6 +9,7 @@ import {
   ExprLiteral,
   ExprLogical,
   ExprSet,
+  ExprSuper,
   ExprThis,
   ExprUnary,
   ExprVariable,
@@ -67,6 +68,21 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     this.declare(stmt.name);
     this.define(stmt.name);
 
+    if (
+      stmt.superclass !== null &&
+      stmt.name.lexeme === stmt.superclass.name.lexeme
+    ) {
+      Lox.error(stmt.superclass.name, "A class can't inherit from itself.");
+    }
+
+    if (stmt.superclass !== null) {
+      this.currentClass = ClassType.SUBCLASS;
+      this.resolve(stmt.superclass);
+
+      this.beginScope();
+      this.scopes.at(-1)?.set("super", true);
+    }
+
     this.beginScope();
     this.scopes.at(-1)?.set("this", true);
 
@@ -81,6 +97,8 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     }
 
     this.endScope();
+
+    if (stmt.superclass !== null) this.endScope();
 
     this.currentClass = enclosingClass;
     return;
@@ -188,6 +206,20 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     return;
   }
 
+  public visitSuperExpr(expr: ExprSuper): void {
+    if (this.currentClass === ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'super' outside of a class.");
+    } else if (this.currentClass !== ClassType.SUBCLASS) {
+      Lox.error(
+        expr.keyword,
+        "Can't use 'super' in a class with no superclass."
+      );
+    }
+
+    this.resolveLocal(expr, expr.keyword);
+    return;
+  }
+
   public visitThisExpr(expr: ExprThis): void {
     if (this.currentClass === ClassType.NONE) {
       Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
@@ -291,5 +323,6 @@ type TFunctionType = keyof typeof FunctionType;
 const ClassType = {
   NONE: "NONE",
   CLASS: "CLASS",
+  SUBCLASS: "SUBCLASS",
 } as const;
 type TClassType = keyof typeof ClassType;

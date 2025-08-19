@@ -82,7 +82,7 @@ function defineAst(outputDir: string, baseName: string, types: Array<string>) {
   }
 
   if (baseName === "Stmt") {
-    content.push(`import { Expr } from './Expr';`);
+    content.push(`import { Expr, ExprVariable } from './Expr';`);
     content.push(`import { Token } from "./Token";`);
     content.push(`import type { TypeOrNull } from './types';`);
   }
@@ -115,6 +115,7 @@ defineAst(outputDir, "Expr", [
   "Literal  : value Object",
   "Logical  : left Expr, operator Token, right Expr",
   "Set      : object Expr, name Token, value Expr",
+  "Super    : keyword Token, method Token",
   "This     : keyword Token",
   "Unary    : operator Token, right Expr",
   "Variable : name Token",
@@ -122,7 +123,7 @@ defineAst(outputDir, "Expr", [
 
 defineAst(outputDir, "Stmt", [
   "Block      : statements Array<Stmt>",
-  "Class      : name Token, methods Array<StmtFunction>",
+  "Class      : name Token, superclass TypeOrNull<ExprVariable>, methods Array<StmtFunction>",
   "Expression : expression Expr",
   "Function   : name Token, params Array<Token>, body Array<Stmt>",
   "If         : condition Expr, thenBranch Stmt, elseBranch TypeOrNull<Stmt>",
